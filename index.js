@@ -1,11 +1,15 @@
 const TelegramBot = require('node-telegram-bot-api');
-
+const express = require('express');
+const cors = require('cors');
 const token = "7105462091:AAG4blRZ7xvcRvAaanFIgMAdEwOI02KIX2M";
 
 const webAppUrl = 'https://progressivesanc.netlify.app'
 
 const bot = new TelegramBot(token, {polling: true});
-
+const app = express();
+app.use(express.json());
+app.use(cors());
+const fs = require("fs")
 
 bot.on('message', async(msg) => {
   const chatId = msg.chat.id;
@@ -46,3 +50,26 @@ bot.on('message', async(msg) => {
     }
   }
 });
+app.post('/web-data', async (req, res) => {
+  const {queryId, products, totalPrice} = req.body;
+  try {
+    await bot.answerWebAppQuery(queryId, {
+      type: 'article',
+      id: queryId,
+      title: "Успешная покупка",
+      input_message_content: {message_text: 'Позддравляем с успешной покупкой, вы приобрели товары ' + products + ' на сумму ' + totalPrice}
+    });
+    return res.res.status(200).json({})
+  } catch (e) {
+    await bot.answerWebAppQuery(queryId, {
+      type: 'article',
+      id: queryId,
+      title: "Неуспешная транзакция"
+    });
+    return res.res.status(500).json({})
+  }
+})
+
+
+const PORT = 8000;
+app.listen(PORT, () => console.log('server started on port' + " " + PORT));
