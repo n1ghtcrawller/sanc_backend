@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 
 const token = '7105462091:AAG4blRZ7xvcRvAaanFIgMAdEwOI02KIX2M';
-const webAppUrl = 'https://progressivesanc.netlify.app';
+const webAppUrl = 'https://b35b-2a00-1370-8178-17a1-533-a949-d8f6-bf89.ngrok-free.app';
 
 const bot = new TelegramBot(token, {polling: true});
 const app = express();
