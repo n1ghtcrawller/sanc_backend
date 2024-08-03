@@ -51,6 +51,7 @@ bot.on('message', async (msg) => {
 });
 
 app.post('/web-data', async (req, res) => {
+  console.log('Received data:', req.body); // Логируем входящие данные
   const {queryId, products = [], totalPrice} = req.body;
   try {
     await bot.answerWebAppQuery(queryId, {
@@ -63,6 +64,7 @@ app.post('/web-data', async (req, res) => {
     })
     return res.status(200).json({});
   } catch (e) {
+    console.error('Error:', e); // Логируем ошибку
     return res.status(500).json({})
   }
 })
