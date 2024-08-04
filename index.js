@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const token = '7105462091:AAG4blRZ7xvcRvAaanFIgMAdEwOI02KIX2M';
 
-const webAppUrl = 'https://9930-2a00-1370-8178-17a1-533-a949-d8f6-bf89.ngrok-free.app';
+const webAppUrl = '';
 
 const bot = new TelegramBot(token, {polling: true});
 const app = express();
@@ -70,6 +70,6 @@ app.post('/web-data', async (req, res) => {
   }
 });
 
-const PORT = 9000;
+const PORT = 8000;
 
 app.listen(PORT, () => console.log('server started on PORT ' + PORT))
