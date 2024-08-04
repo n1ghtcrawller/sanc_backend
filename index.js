@@ -10,7 +10,9 @@ const bot = new TelegramBot(token, {polling: true});
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: 'https://ed73-84-252-147-254.ngrok-free.app'
+}));
 
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
