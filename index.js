@@ -14,6 +14,7 @@ app.use(cors());
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
+  userData[chatId] = { chatId };
 
   if (text === '/start') {
     await bot.sendMessage(chatId, 'Заходи в наш интернет магазин по кнопке ниже', {
@@ -43,8 +44,7 @@ bot.on('message', async (msg) => {
 });
 
 app.post('/web-data', async (req, res) => {
-  const chatId = msg?.chat.id;
-  const { products = [], totalPrice } = req.body;
+  const { chatId, products = [], totalPrice } = req.body;
   console.log('Chat ID:', chatId);
   console.log('Products:', products);
   console.log('Total Price:', totalPrice);
