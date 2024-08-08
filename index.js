@@ -44,7 +44,7 @@ bot.on('message', async (msg) => {
 
 app.post('/web-data', async (req, res) => {
   const { chatId, queryId, products = [], totalPrice } = req.body;
-  console.log('Received data:', req.body); // Л
+  // console.log('Received data:', req.body); // Л
   console.log('Chat ID:', chatId);
   console.log('query ID:', queryId);
   console.log('Products:', products);
