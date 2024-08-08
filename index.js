@@ -58,7 +58,7 @@ app.post('/web-data', async (req, res) => {
 
   try {
     // Формируем сообщение с товарами и их количеством
-    const productList = products.map(item => `${item.title} (Количество: ${item.count})`).join('\n');
+    const productList = products.map(item => ` - ${item.title} (Количество: ${item.count})\n`);
 
     // Отправляем инвойс
     await bot.sendInvoice(
