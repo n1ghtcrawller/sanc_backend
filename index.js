@@ -61,7 +61,7 @@ app.post('/web-data', async (req, res) => {
 
     // Отправляем инвойс
     await bot.sendInvoice(
-        1468718377,
+        '1468718377',
         'Оплата заказа',
         `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList},`,
         '381764678:TEST:91939',
