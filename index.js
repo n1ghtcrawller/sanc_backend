@@ -1,8 +1,8 @@
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const cors = require('cors');
-const paymentToken = '381764678:TEST:91939'; // Замените на ваш токен
-const token = '7105462091:AAG4blRZ7xvcRvAaanFIgMAdEwOI02KIX2M'; // Замените на ваш токен
+// const paymentToken = '381764678:TEST:91939';
+const token = '7105462091:AAG4blRZ7xvcRvAaanFIgMAdEwOI02KIX2M';
 const webAppUrl = 'https://progressivesanc.netlify.app';
 
 const bot = new TelegramBot(token, { polling: true });
@@ -51,15 +51,18 @@ app.post('/web-data', async (req, res) => {
     const productList = products.map(item => `${item.title} (Количество: ${item.count})`).join('\n');
 
     // Отправляем инвойс
-    await bot.sendInvoice(chatId,
+    await bot.sendInvoice(
+        chatId,
         'Оплата заказа',
-        `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList},
-    ${paymentToken}`,
-        { currency: 'RUB',
-          prices: [{ label: 'Товары', amount: totalPrice * 100 }], // Сумма в копейках
-          start_parameter: 'get_order',
-          invoice_payload: JSON.stringify({ products })
-        });
+        `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList}`,
+        'invoice',
+        '381764678:TEST:91939',
+        "USD",
+        [('Оплата заказа'), totalPrice * 100]
+    )
+
+
+
 
     return res.status(200).json({});
   } catch (e) {
