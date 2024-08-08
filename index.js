@@ -46,6 +46,15 @@ app.post('/web-data', async (req, res) => {
   console.log('Received data:', req.body); // Логируем входящие данные
   const { chatId, products = [], totalPrice } = req.body;
 
+  // Логируем chatId
+  console.log('Chat ID:', chatId);
+
+  // Проверяем наличие chatId
+  if (!chatId) {
+    console.error('Chat ID is missing');
+    return res.status(400).json({ error: 'Chat ID is required' });
+  }
+
   try {
     // Формируем сообщение с товарами и их количеством
     const productList = products.map(item => `${item.title} (Количество: ${item.count})`).join('\n');
@@ -54,15 +63,12 @@ app.post('/web-data', async (req, res) => {
     await bot.sendInvoice(
         chatId,
         'Оплата заказа',
-        `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList}`,
-        'invoice',
+        `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList},`,
         '381764678:TEST:91939',
-        "RUB",
+        'invoice',
+        'RUB',
         [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
-    )
-
-
-
+  );
 
     return res.status(200).json({});
   } catch (e) {
