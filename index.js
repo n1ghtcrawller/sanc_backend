@@ -45,9 +45,9 @@ bot.on('message', async (msg) => {
 app.post('/web-data', async (req, res) => {
   console.log('Received data:', req.body); // Логируем входящие данные
   const { chatId, products = [], totalPrice } = req.body;
-
-  // Логируем chatId
   console.log('Chat ID:', chatId);
+  console.log('Products:', products);
+  console.log('Total Price:', totalPrice);
 
   // Проверяем наличие chatId
   if (!chatId) {
