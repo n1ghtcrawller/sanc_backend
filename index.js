@@ -57,8 +57,8 @@ app.post('/web-data', async (req, res) => {
         `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList}`,
         'invoice',
         '381764678:TEST:91939',
-        "USD",
-        [('Оплата заказа'), totalPrice * 100]
+        "RUB",
+        [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
     )
 
 
