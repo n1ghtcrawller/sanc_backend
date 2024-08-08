@@ -10,7 +10,7 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-
+const userData = {};
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
