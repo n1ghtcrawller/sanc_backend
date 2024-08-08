@@ -10,11 +10,10 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-const userData = {};
+// const userData = {};
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
-  userData[chatId] = { chatId };
 
   if (text === '/start') {
     await bot.sendMessage(chatId, 'Заходи в наш интернет магазин по кнопке ниже', {
@@ -44,8 +43,9 @@ bot.on('message', async (msg) => {
 });
 
 app.post('/web-data', async (req, res) => {
-  const { chatId, products = [], totalPrice } = req.body;
+  const { chatId, queryId, products = [], totalPrice } = req.body;
   console.log('Chat ID:', chatId);
+  console.log('query ID:', queryId);
   console.log('Products:', products);
   console.log('Total Price:', totalPrice);
 
@@ -61,7 +61,7 @@ app.post('/web-data', async (req, res) => {
 
     // Отправляем инвойс
     await bot.sendInvoice(
-        `${ chatId }`,
+        queryId,
         'Оплата заказа',
         `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList},`,
         '381764678:TEST:91939',
