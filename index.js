@@ -43,7 +43,6 @@ bot.on('message', async (msg) => {
 });
 
 app.post('/web-data', async (req, res) => {
-  console.log('Received data:', req.body); // Логируем входящие данные
   const { chatId, products = [], totalPrice } = req.body;
   console.log('Chat ID:', chatId);
   console.log('Products:', products);
@@ -61,7 +60,7 @@ app.post('/web-data', async (req, res) => {
 
     // Отправляем инвойс
     await bot.sendInvoice(
-        chatId,
+        msg.chat.id,
         'Оплата заказа',
         `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList},`,
         '381764678:TEST:91939',
