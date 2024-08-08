@@ -65,8 +65,8 @@ app.post('/web-data', async (req, res) => {
         chatId,
         'Оплата заказа',
         `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList},`,
-        '381764678:TEST:91939',
         'invoice',
+        '381764678:TEST:91939',
         'RUB',
         [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
   );
