@@ -58,13 +58,14 @@ app.post('/web-data', async (req, res) => {
 
   try {
     // Формируем сообщение с товарами и их количеством
-    const productList = products.map(item => `${item.title}, размер ${item.size} (Количество: ${item.count})\n`);
+    const productList = products.map(item => `<b>${item.title}</b>, размер: <b>${item.size}</b>, (Количество: ${item.count})\n`);
 
     // Отправляем инвойс
     await bot.sendInvoice(
         chatId,
         'Оплата заказа',
-        `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList},`,
+        `Вы приобрели товары на сумму ${totalPrice}₽:
+        \n${productList},`,
         'invoice',
         '381764678:TEST:91939',
         'RUB',
