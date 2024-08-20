@@ -58,8 +58,8 @@ app.post('/web-data', async (req, res) => {
     const productList = products.map(item => `${item.title}, размер: ${item.size}, (Количество: ${item.count})\n`).join('');
 
     // Формируем сообщение с информацией о доставке
-   ` const deliveryMessage =
-        Информация о доставке:
+    const deliveryMessage =
+        `Информация о доставке:
         Страна: ${deliveryInfo.country}
         Город: ${deliveryInfo.city}
         Улица: ${deliveryInfo.street}
