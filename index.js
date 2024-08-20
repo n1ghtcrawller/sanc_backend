@@ -43,12 +43,9 @@ bot.on('message', async (msg) => {
 });
 
 app.post('/web-data', async (req, res) => {
-  const { chatId, queryId, products = [], totalPrice } = req.body;
-  console.log('Received data:', req.body); // Л
-  // console.log('Chat ID:', chatId);
+  const { chatId, queryId, products = [], totalPrice, deliveryInfo } = req.body;
+  console.log('Received data:', req.body);
   console.log('query ID:', queryId);
-  // console.log('Products:', products);
-  // console.log('Total Price:', totalPrice);
 
   // Проверяем наличие chatId
   if (!chatId) {
@@ -58,14 +55,25 @@ app.post('/web-data', async (req, res) => {
 
   try {
     // Формируем сообщение с товарами и их количеством
-    const productList = products.map(item => `${item.title}, размер: ${item.size}, (Количество: ${item.count})\n`);
+    const productList = products.map(item => `${item.title}, размер: ${item.size}, (Количество: ${item.count})\n`).join('');
+
+    // Формируем сообщение с информацией о доставке
+   ` const deliveryMessage =
+        Информация о доставке:
+        Страна: ${deliveryInfo.country}
+        Город: ${deliveryInfo.city}
+        Улица: ${deliveryInfo.street}
+        Дом: ${deliveryInfo.house}
+        Квартира: ${deliveryInfo.flat}
+        Телефон: ${deliveryInfo.phone}
+        Способ доставки: ${deliveryInfo.subject}`
+        ;
 
     // Отправляем инвойс
     await bot.sendInvoice(
         chatId,
         'Оплата заказа',
-        `Вы приобрели товары на сумму ${totalPrice}₽:
-        \n${productList},`,
+        `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList}\n${deliveryMessage}`,
         'invoice',
         '381764678:TEST:91939',
         'RUB',
