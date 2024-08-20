@@ -57,29 +57,28 @@ app.post('/web-data', async (req, res) => {
     // Формируем сообщение с товарами и их количеством
     const productList = products.map(item => `${item.title}, размер: ${item.size}, (Количество: ${item.count})`).join('\n');
 
-    // Формируем сообщение с информацией о доставке
+// Формируем сообщение с информацией о доставке
     const deliveryMessage =
         `Информация о доставке:
         Город: ${deliveryInfo.city}
         Улица: ${deliveryInfo.street}
         Дом: ${deliveryInfo.house}
         Телефон: ${deliveryInfo.phone}
-        Способ доставки: ${deliveryInfo.subject}`
-        ;
+        Способ доставки: ${deliveryInfo.subject}`;
 
-    // Отправляем инвойс
+// Отправляем инвойс
     await bot.sendInvoice(
         chatId,
         'Оплата заказа',
-        `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList}\n`,
+        `Вы выбрали товаров на сумму ${totalPrice}₽:\n${productList}\n`, // Добавлен перенос строки перед списком товаров
         'invoice',
         '401643678:TEST:191c8bc9-09f8-4f54-8d59-5d30b5779dc4',
         'RUB',
         [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
   );
-    await bot.sendMessage(
-        chatId, `${deliveryMessage}`
-    )
+
+// Отправляем информацию о доставке
+    await bot.sendMessage(chatId, deliveryMessage);
 
     return res.status(200).json({});
   } catch (e) {
