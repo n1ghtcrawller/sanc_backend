@@ -60,11 +60,9 @@ app.post('/web-data', async (req, res) => {
     // Формируем сообщение с информацией о доставке
     const deliveryMessage =
         `Информация о доставке:
-        Страна: ${deliveryInfo.country}
         Город: ${deliveryInfo.city}
         Улица: ${deliveryInfo.street}
         Дом: ${deliveryInfo.house}
-        Квартира: ${deliveryInfo.flat}
         Телефон: ${deliveryInfo.phone}
         Способ доставки: ${deliveryInfo.subject}`
         ;
