@@ -73,7 +73,7 @@ app.post('/web-data', async (req, res) => {
         'Оплата заказа',
         `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList}\n`,
         'invoice',
-        '381764678:TEST:91939',
+        '401643678:TEST:191c8bc9-09f8-4f54-8d59-5d30b5779dc4',
         'RUB',
         [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
   );
