@@ -71,12 +71,15 @@ app.post('/web-data', async (req, res) => {
     await bot.sendInvoice(
         chatId,
         'Оплата заказа',
-        `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList}\n${deliveryMessage}`,
+        `Вы приобрели товары на сумму ${totalPrice}₽:\n${productList}\n`,
         'invoice',
         '381764678:TEST:91939',
         'RUB',
         [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
   );
+    await bot.sendMessage(
+        chatId, `${deliveryMessage}`
+    )
 
     return res.status(200).json({});
   } catch (e) {
