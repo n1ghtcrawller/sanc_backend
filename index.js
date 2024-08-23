@@ -8,6 +8,7 @@ const webAppUrl = 'https://progressivesanc.netlify.app';
 const bot = new TelegramBot(token, { polling: true });
 const app = express();
 const admin = require('firebase-admin');
+const serviceAccount = require('./keybn-keydata.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
