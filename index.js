@@ -4,11 +4,11 @@ const cors = require('cors');
 // const paymentToken = '381764678:TEST:91939';
 const token = '7105462091:AAG4blRZ7xvcRvAaanFIgMAdEwOI02KIX2M';
 const webAppUrl = 'https://progressivesanc.netlify.app';
-const functions = require('firebase');
+// const functions = require('firebase');
 const bot = new TelegramBot(token, { polling: true });
 const app = express();
 const admin = require('firebase-admin');
-const serviceAccount = require('./keybn-keydata.json'); // Укажите путь к вашему JSON файлу
+const serviceAccount = require('./keybn-keydata.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
