@@ -91,6 +91,14 @@ app.post('/web-data', async (req, res) => {
 
     // Отправляем информацию о доставке
     await bot.sendMessage(chatId, deliveryMessage);
+    const orderData = {
+      chatId,
+      totalAmount: paymentInfo.total_amount,
+      currency: paymentInfo.currency,
+      invoicePayload: paymentInfo.invoice_payload,
+      orderDate: new Date(),
+      products: paymentInfo.provided_product_info || [] // Добавьте информацию о товарах, если доступна
+    };
     try {
       await db.collection('orders').add(orderData);
       await bot.sendMessage(chatId, 'Ваш заказ успешно оплачен! Спасибо за покупку.');
