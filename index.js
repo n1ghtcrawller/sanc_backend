@@ -47,6 +47,8 @@ app.post('/web-data', async (req, res) => {
     console.error('Chat ID is missing');
     return res.status(400).json({ error: 'Chat ID is required' });
   }
+  await db.collection('orders').add(req.body);
+  console.log('Order Added to Firebase');
 
   try {
     // Формируем сообщение с товарами и их количеством
@@ -71,11 +73,8 @@ app.post('/web-data', async (req, res) => {
       'RUB',
       [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
     );
-
-    // Сохраняем данные заказа в Firestore
-    await db.collection('orders').add(req.body);
-    await bot.sendMessage(chatId, 'Ваш заказ успешно оплачен! Спасибо за покупку.');
-    console.log('Order Added to Firebase');
+    
+    // await bot.sendMessage(chatId, 'Ваш заказ успешно оплачен! Спасибо за покупку.');
 
     await bot.sendMessage(chatId, "Возникли проблемы с оплатой? Напишите нам!", {
       reply_markup: {
