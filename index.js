@@ -47,7 +47,7 @@ app.post('/web-data', async (req, res) => {
     console.error('Chat ID is missing');
     return res.status(400).json({ error: 'Chat ID is required' });
   }
-  await db.collection('orders').add(req.body);
+  await db.collection('orders').add(req.body, Date);
   console.log('Order Added to Firebase');
 
   try {
