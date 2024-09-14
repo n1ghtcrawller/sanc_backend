@@ -72,6 +72,14 @@ app.post('/web-data', async (req, res) => {
       'RUB',
       [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
     );
+    try {
+      await db.collection('orders').add(orderData);
+      await bot.sendMessage(chatId, 'Ваш заказ успешно оплачен! Спасибо за покупку.');
+    } catch (error) {
+      console.error('Ошибка при сохранении заказа:', error);
+      await bot.sendMessage(chatId, 'Произошла ошибка при обработке вашего заказа. Пожалуйста, попробуйте еще раз.');
+    }
+  
     await bot.sendMessage(chatId, "Возникли проблемы с оплатой? Напишите нам!", {
       reply_markup: {
         inline_keyboard: [
