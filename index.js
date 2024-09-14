@@ -18,7 +18,6 @@ const serviceAccount = require('../secrets/serviceAccountKey.json'); // Путь
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  // databaseURL: 'keybasicsneutral-base.firebaseapp.com'
 });
 
 const db = admin.firestore();
@@ -54,7 +53,7 @@ app.post('/web-data', async (req, res) => {
     const productList = products.map(item => `${item.title}, размер: ${item.size}, (Количество: ${item.count})`).join('\n');
 
     // Формируем сообщение с информацией о доставке
-    const deliveryMessage =`
+    const deliveryMessage = `
       Информация о заказе:
       Город: ${deliveryInfo.city}
       Улица: ${deliveryInfo.street}
@@ -72,48 +71,24 @@ app.post('/web-data', async (req, res) => {
       'RUB',
       [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
     );
-    try {
-      await db.collection('orders').add(orderData);
-      await bot.sendMessage(chatId, 'Ваш заказ успешно оплачен! Спасибо за покупку.');
-    } catch (error) {
-      console.error('Ошибка при сохранении заказа:', error);
-      await bot.sendMessage(chatId, 'Произошла ошибка при обработке вашего заказа. Пожалуйста, попробуйте еще раз.');
-    }
-  
+
+    // Сохраняем данные заказа в Firestore
+    await db.collection('orders').add(req.body);
+    await bot.sendMessage(chatId, 'Ваш заказ успешно оплачен! Спасибо за покупку.');
+    console.log('Order Added to Firebase');
+
     await bot.sendMessage(chatId, "Возникли проблемы с оплатой? Напишите нам!", {
       reply_markup: {
         inline_keyboard: [
           [{ text: 'Напишите нам', url: 'https://t.me/@vlaaaadyanoy' }]
         ]
       }
-    });    return res.status(200).json({});
+    });
+
+    return res.status(200).json({});
   } catch (e) {
     console.error('Error:', e); // Логируем ошибку
     return res.status(500).json({});
-  }
-});
-
-// Обработка успешного платежа
-bot.on('successful_payment', async (msg) => {
-  const chatId = msg.chat.id;
-  const paymentInfo = msg.successful_payment;
-
-  // Сохранение данных о заказе в Firestore
-  const orderData = {
-    chatId,
-    totalAmount: paymentInfo.total_amount,
-    currency: paymentInfo.currency,
-    invoicePayload: paymentInfo.invoice_payload,
-    orderDate: new Date(),
-    products: paymentInfo.provided_product_info || [] // Добавьте информацию о товарах, если доступна
-  };
-
-  try {
-    await db.collection('orders').add(orderData);
-    await bot.sendMessage(chatId, 'Ваш заказ успешно оплачен! Спасибо за покупку.');
-  } catch (error) {
-    console.error('Ошибка при сохранении заказа:', error);
-    await bot.sendMessage(chatId, 'Произошла ошибка при обработке вашего заказа. Пожалуйста, попробуйте еще раз.');
   }
 });
 
