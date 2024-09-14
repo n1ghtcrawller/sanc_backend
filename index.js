@@ -72,7 +72,13 @@ app.post('/web-data', async (req, res) => {
       'RUB',
       [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
     );
-    return res.status(200).json({});
+    await bot.sendMessage(chatId, "Возникли проблемы с оплатой? Напишите нам!", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'Напишите нам', url: 'https://t.me/@vlaaaadyanoy' }]
+        ]
+      }
+    });    return res.status(200).json({});
   } catch (e) {
     console.error('Error:', e); // Логируем ошибку
     return res.status(500).json({});
