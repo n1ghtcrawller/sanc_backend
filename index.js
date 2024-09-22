@@ -37,6 +37,35 @@ bot.on('message', async (msg) => {
   }
 });
 
+// Маршрут для получения коллекции products
+app.get('/products', async (req, res) => {
+  try {
+    // Получаем коллекцию products из Firestore
+    const productsRef = db.collection('products');
+    const snapshot = await productsRef.get();
+
+    // Проверяем, есть ли данные в коллекции
+    if (snapshot.empty) {
+      console.log('No matching documents.');
+      return res.status(404).json({ message: 'No products found' });
+    }
+
+    // Преобразуем каждый документ в объект и собираем их в массив
+    const products = [];
+    snapshot.forEach(doc => {
+      products.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Отправляем массив с продуктами как ответ на запрос
+    return res.status(200).json(products);
+  } catch (error) {
+    console.error('Error getting products:', error);
+    return res.status(500).json({ message: 'Error retrieving products' });
+  }
+});
+
+
+
 app.post('/web-data', async (req, res) => {
   const { chatId, queryId, products = [], totalPrice, deliveryInfo } = req.body;
   console.log('Received data:', req.body);
