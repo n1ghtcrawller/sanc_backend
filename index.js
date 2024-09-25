@@ -106,8 +106,12 @@ bot.on('callback_query', async (callbackQuery) => {
       let orders = 'Заказы:\n\n';
       snapshot.forEach(doc => {
         const order = doc.data();
+        const productsList = order.products && Array.isArray(order.products) ?
+            order.products.map(p => `Название: ${p.title}, Размер: ${p.size}, Количество: ${p.count}`).join('\n') :
+            'Нет товаров в заказе';
+
         orders += `ID: ${doc.id}\n`;
-        orders += `Товары:\n${order.products.map(p => `Название: ${p.title}, Размер: ${p.size}, Количество: ${p.count}`).join('\n')}\n`;
+        orders += `Товары:\n${productsList}\n`;
         orders += `Цена: ${order.totalPrice}₽\n`;
         orders += `Дата: ${order.createdAt instanceof admin.firestore.Timestamp ? order.createdAt.toDate() : order.createdAt}\n\n`;
       });
@@ -118,6 +122,7 @@ bot.on('callback_query', async (callbackQuery) => {
       return bot.sendMessage(chatId, 'Ошибка при получении заказов');
     }
   }
+
 
 
   if (action === 'view_products') {
