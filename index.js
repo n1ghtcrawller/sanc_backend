@@ -96,7 +96,8 @@ bot.on('callback_query', async (callbackQuery) => {
 
   if (action === 'view_orders') {
     try {
-      const ordersRef = db.collection('orders');
+      // Добавляем сортировку по дате создания в порядке возрастания
+      const ordersRef = db.collection('orders').orderBy('createdAt', 'desc');
       const snapshot = await ordersRef.get();
 
       if (snapshot.empty) {
@@ -141,6 +142,7 @@ bot.on('callback_query', async (callbackQuery) => {
       return bot.sendMessage(chatId, 'Ошибка при получении заказов');
     }
   }
+
 
 
 
