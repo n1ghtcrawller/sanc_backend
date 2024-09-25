@@ -67,7 +67,9 @@ bot.on('message', async (msg) => {
       return bot.sendMessage(chatId, `Добро пожаловать, ${username}. Вы вошли как администратор.`, {
         reply_markup: {
           inline_keyboard: [
-            [{ text: 'Просмотр заказов', callback_data: 'view_orders' }],
+            [{ text: 'Просмотр заказов за сегодня', callback_data: 'view_orders_today' }],
+            [{ text: 'Просмотр заказов за неделю', callback_data: 'view_orders_week' }],
+            [{ text: 'Просмотр всех заказов', callback_data: 'view_orders' }],
             [{ text: 'Просмотр товаров', callback_data: 'view_products' }],
             [{ text: 'Удаление товара', callback_data: 'delete_product' }],
             [{ text: 'Добавление товара', callback_data: 'add_product' }]
@@ -94,26 +96,27 @@ bot.on('callback_query', async (callbackQuery) => {
   const chatId = callbackQuery.message.chat.id;
   const action = callbackQuery.data;
 
-  if (action === 'view_orders') {
+  if (action === 'view_orders_today') {
     try {
-      // Добавляем сортировку по дате создания в порядке возрастания
-      const ordersRef = db.collection('orders').orderBy('createdAt', 'asc');
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0); // Начало дня
+
+      const ordersRef = db.collection('orders')
+          .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(startOfDay))
+          .orderBy('createdAt', 'asc');
       const snapshot = await ordersRef.get();
 
       if (snapshot.empty) {
-        return bot.sendMessage(chatId, 'Заказы не найдены.');
+        return bot.sendMessage(chatId, 'Заказы за сегодня не найдены.');
       }
 
-      let orders = 'Заказы:\n\n';
+      let orders = 'Заказы за сегодня:\n\n';
       snapshot.forEach(doc => {
         const order = doc.data();
-
-        // Проверка и отображение продуктов
         const productsList = order.products && Array.isArray(order.products) ?
             order.products.map(p => `Название: ${p.title}, Размер: ${p.size}, Количество: ${p.count}, Цена: ${p.price}₽`).join('\n') :
             'Нет товаров в заказе';
 
-        // Формирование информации о доставке
         const deliveryInfo = order.deliveryInfo || {};
         const deliveryDetails = `
         Имя: ${deliveryInfo.name || 'Не указано'}
@@ -127,7 +130,6 @@ bot.on('callback_query', async (callbackQuery) => {
       __________________________________________________________
       `;
 
-        // Формирование общего списка заказов
         orders += `ID заказа: ${doc.id}\n`;
         orders += `Товары:\n${productsList}\n`;
         orders += `Общая цена: ${order.totalPrice}₽\n`;
@@ -138,12 +140,61 @@ bot.on('callback_query', async (callbackQuery) => {
 
       return bot.sendMessage(chatId, orders);
     } catch (error) {
-      console.error('Ошибка при получении заказов:', error);
-      return bot.sendMessage(chatId, 'Ошибка при получении заказов');
+      console.error('Ошибка при получении заказов за сегодня:', error);
+      return bot.sendMessage(chatId, 'Ошибка при получении заказов за сегодня');
     }
   }
 
 
+  if (action === 'view_orders_week') {
+    try {
+      const today = new Date();
+      const weekAgo = new Date();
+      weekAgo.setDate(today.getDate() - 7); // Неделя назад
+
+      const ordersRef = db.collection('orders')
+          .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(weekAgo))
+          .orderBy('createdAt', 'asc');
+      const snapshot = await ordersRef.get();
+
+      if (snapshot.empty) {
+        return bot.sendMessage(chatId, 'Заказы за последнюю неделю не найдены.');
+      }
+
+      let orders = 'Заказы за последнюю неделю:\n\n';
+      snapshot.forEach(doc => {
+        const order = doc.data();
+        const productsList = order.products && Array.isArray(order.products) ?
+            order.products.map(p => `Название: ${p.title}, Размер: ${p.size}, Количество: ${p.count}, Цена: ${p.price}₽`).join('\n') :
+            'Нет товаров в заказе';
+
+        const deliveryInfo = order.deliveryInfo || {};
+        const deliveryDetails = `
+        Имя: ${deliveryInfo.name || 'Не указано'}
+        Город: ${deliveryInfo.city || 'Не указан'}
+        Улица: ${deliveryInfo.street || 'Не указана'}
+        Дом: ${deliveryInfo.house || 'Не указан'}
+        Офис: ${deliveryInfo.office || 'Не указан'}
+        Способ доставки: ${deliveryInfo.subject || 'Не указан'}
+        Телефон: ${deliveryInfo.phone || 'Не указан'}
+        Комментарий: ${deliveryInfo.comment || 'Отсутствует'}
+      __________________________________________________________
+      `;
+
+        orders += `ID заказа: ${doc.id}\n`;
+        orders += `Товары:\n${productsList}\n`;
+        orders += `Общая цена: ${order.totalPrice}₽\n`;
+        orders += `Дата: ${order.createdAt instanceof admin.firestore.Timestamp ? order.createdAt.toDate() : order.createdAt}\n`;
+        orders += `Email: ${order.email || 'Не указан'}\n`;
+        orders += `Информация о доставке:\n${deliveryDetails}\n\n`;
+      });
+
+      return bot.sendMessage(chatId, orders);
+    } catch (error) {
+      console.error('Ошибка при получении заказов за последнюю неделю:', error);
+      return bot.sendMessage(chatId, 'Ошибка при получении заказов за последнюю неделю');
+    }
+  }
 
 
 
