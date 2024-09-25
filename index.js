@@ -115,6 +115,7 @@ bot.on('callback_query', async (callbackQuery) => {
         // Формирование информации о доставке
         const deliveryInfo = order.deliveryInfo || {};
         const deliveryDetails = `
+        Имя: ${deliveryInfo.name || 'Не указано'}
         Город: ${deliveryInfo.city || 'Не указан'}
         Улица: ${deliveryInfo.street || 'Не указана'}
         Дом: ${deliveryInfo.house || 'Не указан'}
@@ -122,6 +123,7 @@ bot.on('callback_query', async (callbackQuery) => {
         Способ доставки: ${deliveryInfo.subject || 'Не указан'}
         Телефон: ${deliveryInfo.phone || 'Не указан'}
         Комментарий: ${deliveryInfo.comment || 'Отсутствует'}
+      __________________________________________________________
       `;
 
         // Формирование общего списка заказов
