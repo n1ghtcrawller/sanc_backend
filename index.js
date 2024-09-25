@@ -22,6 +22,71 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
+// Хранение сессий (можно использовать в памяти для простоты)
+const sessions = {};
+
+// Команда для логина администратора
+bot.onText(/\/login (.+)/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  const [username, password] = match[1].split(' '); // Разделяем введенные логин и пароль
+
+  // Проверяем, введены ли логин и пароль
+  if (!username || !password) {
+    return bot.sendMessage(chatId, 'Введите логин и пароль в формате: /login <username> <password>');
+  }
+
+  try {
+    // Получаем пользователя из коллекции `users` по логину
+    const usersRef = db.collection('users').where('username', '==', username);
+    const snapshot = await usersRef.get();
+
+    // Если пользователь не найден
+    if (snapshot.empty) {
+      return bot.sendMessage(chatId, 'Неправильный логин или пароль');
+    }
+
+    const userData = snapshot.docs[0].data(); // Данные пользователя
+
+    // Сравниваем пароль
+    if (password !== userData.password) {
+      return bot.sendMessage(chatId, 'Неправильный логин или пароль');
+    }
+
+    // Проверяем, является ли пользователь администратором
+    if (userData.role !== 'admin') {
+      return bot.sendMessage(chatId, 'У вас нет прав администратора');
+    }
+
+    // Сохраняем сессию
+    sessions[chatId] = { username, role: userData.role };
+
+    // Отправляем сообщение о успешном входе
+    return bot.sendMessage(chatId, `Добро пожаловать, ${username}. Вы вошли как администратор.`);
+  } catch (error) {
+    console.error('Ошибка при логине:', error);
+    return bot.sendMessage(chatId, 'Ошибка при авторизации');
+  }
+});
+
+// Middleware для проверки роли администратора
+function isAdmin(chatId) {
+  const session = sessions[chatId];
+  return session && session.role === 'admin';
+}
+
+// Команда для выхода
+bot.onText(/\/logout/, (msg) => {
+  const chatId = msg.chat.id;
+
+  if (sessions[chatId]) {
+    delete sessions[chatId]; // Удаляем сессию пользователя
+    return bot.sendMessage(chatId, 'Вы успешно вышли из системы');
+  }
+
+  return bot.sendMessage(chatId, 'Вы не были авторизованы');
+});
+
+// Основная логика бота
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
@@ -34,6 +99,33 @@ bot.on('message', async (msg) => {
         ]
       }
     });
+  }
+});
+
+// Пример использования функции isAdmin для доступа к командам администратора
+bot.onText(/\/addproduct (.+)/, async (msg, match) => {
+  const chatId = msg.chat.id;
+
+  // Проверка авторизации администратора
+  if (!isAdmin(chatId)) {
+    return bot.sendMessage(chatId, 'У вас нет прав для добавления товаров');
+  }
+
+  const productDetails = match[1]; // Получаем данные о товаре
+  const [title, price, description] = productDetails.split(',');
+
+  try {
+    // Добавление товара в коллекцию products
+    await db.collection('products').add({
+      title,
+      price: parseFloat(price),
+      description,
+      createdAt: admin.firestore.Timestamp.now()
+    });
+    return bot.sendMessage(chatId, 'Товар успешно добавлен');
+  } catch (error) {
+    console.error('Ошибка при добавлении товара:', error);
+    return bot.sendMessage(chatId, 'Ошибка при добавлении товара');
   }
 });
 
@@ -64,8 +156,7 @@ app.get('/products', async (req, res) => {
   }
 });
 
-
-
+// Маршрут для обработки данных заказа
 app.post('/web-data', async (req, res) => {
   const { chatId, queryId, products = [], totalPrice, deliveryInfo } = req.body;
   console.log('Received data:', req.body);
@@ -80,7 +171,7 @@ app.post('/web-data', async (req, res) => {
     ...req.body, // Все данные из req.body
     createdAt: admin.firestore.Timestamp.now() // Текущая дата и время
   };
-  await db.collection('orders').add(orderData); 
+  await db.collection('orders').add(orderData);
   console.log('Order Added to Firebase');
 
   try {
@@ -98,15 +189,15 @@ app.post('/web-data', async (req, res) => {
 
     // Отправляем инвойс
     await bot.sendInvoice(
-      chatId,
-      'Оплата заказа',
-      `Вы выбрали товаров на сумму ${totalPrice}₽:\n${productList}`,
-      'invoice',
-      '381764678:TEST:91939',
-      'RUB',
-      [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
+        chatId,
+        'Оплата заказа',
+        `Вы выбрали товаров на сумму ${totalPrice}₽:\n${productList}`,
+        'invoice',
+        '381764678:TEST:91939',
+        'RUB',
+        [{ label: 'Оплата заказа', amount: totalPrice * 100 }]
     );
-    
+
     // await bot.sendMessage(chatId, 'Ваш заказ успешно оплачен! Спасибо за покупку.');
 
     await bot.sendMessage(chatId, "Возникли проблемы с оплатой? Напишите нам!", {
