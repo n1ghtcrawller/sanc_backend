@@ -26,6 +26,7 @@ const db = admin.firestore();
 const sessions = {};
 
 // Основной обработчик сообщений
+// Основной обработчик сообщений
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
@@ -36,40 +37,43 @@ bot.on('message', async (msg) => {
       return bot.sendMessage(chatId, 'Введите логин и пароль в формате: /login <username> <password>');
     }
 
-    const [username, password] = match[1].split(' '); // Разделяем введенные логин и пароль
+    const [username, password] = match[1].split(' ');
 
-    // Проверяем, введены ли логин и пароль
     if (!username || !password) {
       return bot.sendMessage(chatId, 'Введите логин и пароль в формате: /login <username> <password>');
     }
 
     try {
-      // Получаем пользователя из коллекции `users` по логину
       const usersRef = db.collection('users').where('username', '==', username);
       const snapshot = await usersRef.get();
 
-      // Если пользователь не найден
       if (snapshot.empty) {
         return bot.sendMessage(chatId, 'Неправильный логин или пароль');
       }
 
-      const userData = snapshot.docs[0].data(); // Данные пользователя
+      const userData = snapshot.docs[0].data();
 
-      // Сравниваем пароль
       if (password !== userData.password) {
         return bot.sendMessage(chatId, 'Неправильный логин или пароль');
       }
 
-      // Проверяем, является ли пользователь администратором
       if (userData.role !== 'admin') {
         return bot.sendMessage(chatId, 'У вас нет прав администратора');
       }
 
-      // Сохраняем сессию
       sessions[chatId] = { username, role: userData.role };
 
-      // Отправляем сообщение о успешном входе
-      return bot.sendMessage(chatId, `Добро пожаловать, ${username}. Вы вошли как администратор.`);
+      // Добавляем инлайн-кнопки для администратора
+      return bot.sendMessage(chatId, `Добро пожаловать, ${username}. Вы вошли как администратор.`, {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: 'Просмотр заказов', callback_data: 'view_orders' }],
+            [{ text: 'Просмотр товаров', callback_data: 'view_products' }],
+            [{ text: 'Удаление товара', callback_data: 'delete_product' }],
+            [{ text: 'Добавление товара', callback_data: 'add_product' }]
+          ]
+        }
+      });
     } catch (error) {
       console.error('Ошибка при логине:', error);
       return bot.sendMessage(chatId, 'Ошибка при авторизации');
@@ -78,52 +82,101 @@ bot.on('message', async (msg) => {
 
   if (text === '/logout') {
     if (sessions[chatId]) {
-      delete sessions[chatId]; // Удаляем сессию пользователя
+      delete sessions[chatId];
       return bot.sendMessage(chatId, 'Вы успешно вышли из системы');
     }
     return bot.sendMessage(chatId, 'Вы не были авторизованы');
   }
+});
 
-  if (text === '/start') {
-    await bot.sendMessage(chatId, 'Заходи в наш интернет магазин по кнопке ниже', {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: 'Сделать заказ', web_app: { url: webAppUrl } }]
-        ]
+// Обработчик инлайн-кнопок
+bot.on('callback_query', async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const action = callbackQuery.data;
+
+  if (action === 'view_orders') {
+    try {
+      const ordersRef = db.collection('orders');
+      const snapshot = await ordersRef.get();
+
+      if (snapshot.empty) {
+        return bot.sendMessage(chatId, 'Заказы не найдены.');
+      }
+
+      let orders = 'Заказы:\n\n';
+      snapshot.forEach(doc => {
+        const order = doc.data();
+        orders += `ID: ${doc.id}\nТовары: ${order.products.map(p => p.title).join(', ')}\nЦена: ${order.totalPrice}₽\nДата: ${order.createdAt.toDate()}\n\n`;
+      });
+
+      return bot.sendMessage(chatId, orders);
+    } catch (error) {
+      console.error('Ошибка при получении заказов:', error);
+      return bot.sendMessage(chatId, 'Ошибка при получении заказов');
+    }
+  }
+
+  if (action === 'view_products') {
+    try {
+      const productsRef = db.collection('products');
+      const snapshot = await productsRef.get();
+
+      if (snapshot.empty) {
+        return bot.sendMessage(chatId, 'Товары не найдены.');
+      }
+
+      let products = 'Товары:\n\n';
+      snapshot.forEach(doc => {
+        const product = doc.data();
+        products += `ID: ${doc.id}\nНазвание: ${product.title}\nЦена: ${product.price}₽\nОписание: ${product.description}\n\n`;
+      });
+
+      return bot.sendMessage(chatId, products);
+    } catch (error) {
+      console.error('Ошибка при получении товаров:', error);
+      return bot.sendMessage(chatId, 'Ошибка при получении товаров');
+    }
+  }
+
+  if (action === 'delete_product') {
+    await bot.sendMessage(chatId, 'Введите ID товара для удаления:');
+    bot.on('message', async (msg) => {
+      const productId = msg.text;
+      try {
+        await db.collection('products').doc(productId).delete();
+        return bot.sendMessage(chatId, `Товар с ID ${productId} успешно удален.`);
+      } catch (error) {
+        console.error('Ошибка при удалении товара:', error);
+        return bot.sendMessage(chatId, 'Ошибка при удалении товара');
       }
     });
   }
 
-  // Пример использования функции isAdmin для доступа к командам администратора
-  if (text.startsWith('/addproduct')) {
-    const match = text.match(/\/addproduct (.+)/);
-    if (!match) {
-      return bot.sendMessage(chatId, 'Введите данные о товаре в формате: /addproduct <название, цена, описание>');
-    }
+  if (action === 'add_product') {
+    await bot.sendMessage(chatId, 'Введите данные о товаре в формате: Название, цена, описание, категория, ссылка на обложку, 5 ссылок на фотографии');
+    bot.once('message', async (msg) => {
+      const productDetails = msg.text.split(',');
+      const [title, price, description, category, coverUrl, ...photoUrls] = productDetails;
 
-    // Проверка авторизации администратора
-    if (!isAdmin(chatId)) {
-      return bot.sendMessage(chatId, 'У вас нет прав для добавления товаров');
-    }
-
-    const productDetails = match[1]; // Получаем данные о товаре
-    const [title, price, description] = productDetails.split(',');
-
-    try {
-      // Добавление товара в коллекцию products
-      await db.collection('products').add({
-        title,
-        price: parseFloat(price),
-        description,
-        createdAt: admin.firestore.Timestamp.now()
-      });
-      return bot.sendMessage(chatId, 'Товар успешно добавлен');
-    } catch (error) {
-      console.error('Ошибка при добавлении товара:', error);
-      return bot.sendMessage(chatId, 'Ошибка при добавлении товара');
-    }
+      try {
+        await db.collection('products').add({
+          title: title.trim(),
+          price: parseFloat(price.trim()),
+          description: description.trim(),
+          category: category.trim(),
+          coverUrl: coverUrl.trim(),
+          photoUrls: photoUrls.map(url => url.trim()),
+          createdAt: admin.firestore.Timestamp.now()
+        });
+        return bot.sendMessage(chatId, 'Товар успешно добавлен');
+      } catch (error) {
+        console.error('Ошибка при добавлении товара:', error);
+        return bot.sendMessage(chatId, 'Ошибка при добавлении товара');
+      }
+    });
   }
 });
+
 
 // Middleware для проверки роли администратора
 function isAdmin(chatId) {
