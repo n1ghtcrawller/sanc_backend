@@ -2,7 +2,6 @@ const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
-
 // Ваш токен бота и URL веб-приложения
 const token = '7105462091:AAG4blRZ7xvcRvAaanFIgMAdEwOI02KIX2M';
 const webAppUrl = 'https://progressivesanc.netlify.app';
@@ -91,10 +90,22 @@ bot.on('message', async (msg) => {
   }
 });
 
+
+// Проверка роли администратора
+function isAdmin(chatId) {
+  const session = sessions[chatId];
+  return session && session.role === 'admin';
+}
+
 // Обработчик инлайн-кнопок
 bot.on('callback_query', async (callbackQuery) => {
   const chatId = callbackQuery.message.chat.id;
   const action = callbackQuery.data;
+
+  // Проверка на администратора
+  if (!isAdmin(chatId)) {
+    return bot.sendMessage(chatId, 'У вас нет прав для выполнения этой команды.');
+  }
 
   if (action === 'view_orders_today') {
     try {
@@ -145,7 +156,6 @@ bot.on('callback_query', async (callbackQuery) => {
     }
   }
 
-
   if (action === 'view_orders_week') {
     try {
       const today = new Date();
@@ -195,8 +205,6 @@ bot.on('callback_query', async (callbackQuery) => {
       return bot.sendMessage(chatId, 'Ошибка при получении заказов за последнюю неделю');
     }
   }
-
-
 
   if (action === 'view_products') {
     try {
@@ -260,11 +268,7 @@ bot.on('callback_query', async (callbackQuery) => {
 });
 
 
-// Middleware для проверки роли администратора
-function isAdmin(chatId) {
-  const session = sessions[chatId];
-  return session && session.role === 'admin';
-}
+
 
 // Маршрут для получения коллекции products
 app.get('/products', async (req, res) => {
