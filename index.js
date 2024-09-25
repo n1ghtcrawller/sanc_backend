@@ -97,7 +97,7 @@ bot.on('callback_query', async (callbackQuery) => {
   if (action === 'view_orders') {
     try {
       // Добавляем сортировку по дате создания в порядке возрастания
-      const ordersRef = db.collection('orders').orderBy('createdAt', 'desc');
+      const ordersRef = db.collection('orders').orderBy('createdAt', 'asc');
       const snapshot = await ordersRef.get();
 
       if (snapshot.empty) {
