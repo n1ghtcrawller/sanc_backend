@@ -48,15 +48,19 @@ bot.on('message', async (msg) => {
     const chatId = callbackQuery.message.chat.id;
     const action = callbackQuery.data;
 
+    // Обработка действия 'my_orders' без проверки прав
     if (action === 'my_orders') {
       try {
+        // Поиск заказов пользователя по chatId
         const ordersRef = db.collection('orders').where('chatId', '==', chatId);
         const snapshot = await ordersRef.get();
 
+        // Если заказы не найдены
         if (snapshot.empty) {
           return bot.sendMessage(chatId, 'У вас пока нет заказов.');
         }
 
+        // Формирование сообщения со списком заказов
         let orders = 'Ваши заказы:\n\n';
         snapshot.forEach(doc => {
           const order = doc.data();
@@ -81,15 +85,14 @@ bot.on('message', async (msg) => {
           orders += `Информация о доставке:\n${deliveryDetails}\n\n`;
         });
 
-        return bot.sendMessage(chatId, orders);
+        return bot.sendMessage(chatId, orders); // Отправляем сообщение один раз
       } catch (error) {
         console.error('Ошибка при получении заказов пользователя:', error);
         return bot.sendMessage(chatId, 'Ошибка при получении ваших заказов.');
       }
     }
-
-    // остальные действия с callback_query...
   });
+
 
 
   if (text.startsWith('/login')) {
