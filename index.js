@@ -48,19 +48,16 @@ bot.on('message', async (msg) => {
     const chatId = callbackQuery.message.chat.id;
     const action = callbackQuery.data;
 
-    // Обработка действия 'my_orders' без проверки прав
+    // Обработка кнопки "Мои заказы" (без проверки прав)
     if (action === 'my_orders') {
       try {
-        // Поиск заказов пользователя по chatId
         const ordersRef = db.collection('orders').where('chatId', '==', chatId);
         const snapshot = await ordersRef.get();
 
-        // Если заказы не найдены
         if (snapshot.empty) {
           return bot.sendMessage(chatId, 'У вас пока нет заказов.');
         }
 
-        // Формирование сообщения со списком заказов
         let orders = 'Ваши заказы:\n\n';
         snapshot.forEach(doc => {
           const order = doc.data();
@@ -78,21 +75,33 @@ bot.on('message', async (msg) => {
           Комментарий: ${deliveryInfo.comment || 'Отсутствует'}
           __________________________________________________________`;
 
+          // Преобразование даты в московское время
+          const orderDate = order.createdAt instanceof admin.firestore.Timestamp
+              ? order.createdAt.toDate().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })
+              : order.createdAt;
+
           orders += `ID заказа: ${doc.id}\n`;
           orders += `Товары:\n${productsList}\n`;
           orders += `Общая цена: ${order.totalPrice}₽\n`;
-          orders += `Дата: ${order.createdAt instanceof admin.firestore.Timestamp ? order.createdAt.toDate() : order.createdAt}\n`;
+          orders += `Дата: ${orderDate}\n`;
           orders += `Информация о доставке:\n${deliveryDetails}\n\n`;
         });
 
-        return bot.sendMessage(chatId, orders); // Отправляем сообщение один раз
+        return bot.sendMessage(chatId, orders);
       } catch (error) {
         console.error('Ошибка при получении заказов пользователя:', error);
         return bot.sendMessage(chatId, 'Ошибка при получении ваших заказов.');
       }
     }
-  });
 
+    // Остальные действия (например, для админов) остаются без изменений
+    if (action === 'view_orders_today' || action === 'view_orders_week' || action === 'view_products' || action === 'delete_product' || action === 'add_product') {
+      if (!isAdmin(chatId)) {
+        return bot.sendMessage(chatId, 'У вас нет прав для выполнения этой команды.');
+      }
+      // Обработка этих действий...
+    }
+  });
 
 
   if (text.startsWith('/login')) {
