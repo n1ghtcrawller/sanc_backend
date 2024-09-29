@@ -24,11 +24,73 @@ const db = admin.firestore();
 // Хранение сессий (можно использовать в памяти для простоты)
 const sessions = {};
 
+bot.on('message', async (msg) => {
+  const chatID = msg.chat.id;
+  const text = msg.text;
+})
+
 // Основной обработчик сообщений
 // Основной обработчик сообщений
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
+
+  if (text === '/start') {
+    bot.sendMessage(chatId, 'Добро пожаловать в пространство KeyBasicsNeutral', {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: 'Мои заказы', callback_data: 'my_orders' }]
+        ]
+      }
+    });
+  }
+  bot.on('callback_query', async (callbackQuery) => {
+    const chatId = callbackQuery.message.chat.id;
+    const action = callbackQuery.data;
+
+    if (action === 'my_orders') {
+      try {
+        const ordersRef = db.collection('orders').where('chatId', '==', chatId);
+        const snapshot = await ordersRef.get();
+
+        if (snapshot.empty) {
+          return bot.sendMessage(chatId, 'У вас пока нет заказов.');
+        }
+
+        let orders = 'Ваши заказы:\n\n';
+        snapshot.forEach(doc => {
+          const order = doc.data();
+          const productsList = order.products && Array.isArray(order.products)
+              ? order.products.map(p => `Название: ${p.title}, Размер: ${p.size}, Количество: ${p.count}, Цена: ${p.price}₽`).join('\n')
+              : 'Нет товаров в заказе';
+
+          const deliveryInfo = order.deliveryInfo || {};
+          const deliveryDetails = `
+                Имя: ${deliveryInfo.name || 'Не указано'}
+                Город: ${deliveryInfo.city || 'Не указан'}
+                Улица: ${deliveryInfo.street || 'Не указана'}
+                Дом: ${deliveryInfo.house || 'Не указан'}
+                Телефон: ${deliveryInfo.phone || 'Не указан'}
+                Комментарий: ${deliveryInfo.comment || 'Отсутствует'}
+                __________________________________________________________`;
+
+          orders += `ID заказа: ${doc.id}\n`;
+          orders += `Товары:\n${productsList}\n`;
+          orders += `Общая цена: ${order.totalPrice}₽\n`;
+          orders += `Дата: ${order.createdAt instanceof admin.firestore.Timestamp ? order.createdAt.toDate() : order.createdAt}\n`;
+          orders += `Информация о доставке:\n${deliveryDetails}\n\n`;
+        });
+
+        return bot.sendMessage(chatId, orders);
+      } catch (error) {
+        console.error('Ошибка при получении заказов пользователя:', error);
+        return bot.sendMessage(chatId, 'Ошибка при получении ваших заказов.');
+      }
+    }
+
+    // остальные действия с callback_query...
+  });
+
 
   if (text.startsWith('/login')) {
     const match = text.match(/\/login (.+)/);
@@ -230,9 +292,16 @@ bot.on('callback_query', async (callbackQuery) => {
 
   if (action === 'delete_product') {
     await bot.sendMessage(chatId, 'Введите ID товара для удаления:');
-    bot.on('message', async (msg) => {
-      const productId = msg.text;
+    bot.once('message', async (msg) => {
+      const productId = msg.text.trim();
+
       try {
+        const productDoc = await db.collection('products').doc(productId).get();
+
+        if (!productDoc.exists) {
+          return bot.sendMessage(chatId, `Товар с ID ${productId} не найден.`);
+        }
+
         await db.collection('products').doc(productId).delete();
         return bot.sendMessage(chatId, `Товар с ID ${productId} успешно удален.`);
       } catch (error) {
@@ -241,6 +310,7 @@ bot.on('callback_query', async (callbackQuery) => {
       }
     });
   }
+
 
   if (action === 'add_product') {
     await bot.sendMessage(chatId, 'Введите данные о товаре в формате: Название, цена, описание, категория, ссылка на обложку, 5 ссылок на фотографии');
