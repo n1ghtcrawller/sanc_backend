@@ -70,13 +70,13 @@ bot.on('message', async (msg) => {
 
           const deliveryInfo = order.deliveryInfo || {};
           const deliveryDetails = `
-                Имя: ${deliveryInfo.name || 'Не указано'}
-                Город: ${deliveryInfo.city || 'Не указан'}
-                Улица: ${deliveryInfo.street || 'Не указана'}
-                Дом: ${deliveryInfo.house || 'Не указан'}
-                Телефон: ${deliveryInfo.phone || 'Не указан'}
-                Комментарий: ${deliveryInfo.comment || 'Отсутствует'}
-                __________________________________________________________`;
+          Имя: ${deliveryInfo.name || 'Не указано'}
+          Город: ${deliveryInfo.city || 'Не указан'}
+          Улица: ${deliveryInfo.street || 'Не указана'}
+          Дом: ${deliveryInfo.house || 'Не указан'}
+          Телефон: ${deliveryInfo.phone || 'Не указан'}
+          Комментарий: ${deliveryInfo.comment || 'Отсутствует'}
+          __________________________________________________________`;
 
           orders += `ID заказа: ${doc.id}\n`;
           orders += `Товары:\n${productsList}\n`;
