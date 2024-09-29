@@ -44,64 +44,6 @@ bot.on('message', async (msg) => {
       }
     });
   }
-  bot.on('callback_query', async (callbackQuery) => {
-    const chatId = callbackQuery.message.chat.id;
-    const action = callbackQuery.data;
-
-    // Обработка кнопки "Мои заказы" (без проверки прав)
-    if (action === 'my_orders') {
-      try {
-        const ordersRef = db.collection('orders').where('chatId', '==', chatId);
-        const snapshot = await ordersRef.get();
-
-        if (snapshot.empty) {
-          return bot.sendMessage(chatId, 'У вас пока нет заказов.');
-        }
-
-        let orders = 'Ваши заказы:\n\n';
-        snapshot.forEach(doc => {
-          const order = doc.data();
-          const productsList = order.products && Array.isArray(order.products)
-              ? order.products.map(p => `Название: ${p.title}, Размер: ${p.size}, Количество: ${p.count}, Цена: ${p.price}₽`).join('\n')
-              : 'Нет товаров в заказе';
-
-          const deliveryInfo = order.deliveryInfo || {};
-          const deliveryDetails = `
-          Имя: ${deliveryInfo.name || 'Не указано'}
-          Город: ${deliveryInfo.city || 'Не указан'}
-          Улица: ${deliveryInfo.street || 'Не указана'}
-          Дом: ${deliveryInfo.house || 'Не указан'}
-          Телефон: ${deliveryInfo.phone || 'Не указан'}
-          Комментарий: ${deliveryInfo.comment || 'Отсутствует'}
-          __________________________________________________________`;
-
-          // Преобразование даты в московское время
-          const orderDate = order.createdAt instanceof admin.firestore.Timestamp
-              ? order.createdAt.toDate().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })
-              : order.createdAt;
-
-          orders += `ID заказа: ${doc.id}\n`;
-          orders += `Товары:\n${productsList}\n`;
-          orders += `Общая цена: ${order.totalPrice}₽\n`;
-          orders += `Дата: ${orderDate}\n`;
-          orders += `Информация о доставке:\n${deliveryDetails}\n\n`;
-        });
-
-        return bot.sendMessage(chatId, orders);
-      } catch (error) {
-        console.error('Ошибка при получении заказов пользователя:', error);
-        return bot.sendMessage(chatId, 'Ошибка при получении ваших заказов.');
-      }
-    }
-
-    // Остальные действия (например, для админов) остаются без изменений
-    if (action === 'view_orders_today' || action === 'view_orders_week' || action === 'view_products' || action === 'delete_product' || action === 'add_product') {
-      if (!isAdmin(chatId)) {
-        return bot.sendMessage(chatId, 'У вас нет прав для выполнения этой команды.');
-      }
-      // Обработка этих действий...
-    }
-  });
 
 
   if (text.startsWith('/login')) {
@@ -177,7 +119,7 @@ bot.on('callback_query', async (callbackQuery) => {
   const action = callbackQuery.data;
 
   // Проверка на администратора
-  if (!isAdmin(chatId)) {
+  if (action !== 'my_orders' && !isAdmin(chatId)) {
     return bot.sendMessage(chatId, 'У вас нет прав для выполнения этой команды.');
   }
 
@@ -230,7 +172,52 @@ bot.on('callback_query', async (callbackQuery) => {
     }
   }
 
-  if (action === 'view_orders_week') {
+  if (action === 'my_orders') {
+    try {
+      const ordersRef = db.collection('orders').where('chatId', '==', chatId);
+      const snapshot = await ordersRef.get();
+
+      if (snapshot.empty) {
+        return bot.sendMessage(chatId, 'У вас пока нет заказов.');
+      }
+
+      let orders = 'Ваши заказы:\n\n';
+      snapshot.forEach(doc => {
+        const order = doc.data();
+        const productsList = order.products && Array.isArray(order.products)
+            ? order.products.map(p => `Название: ${p.title}, Размер: ${p.size}, Количество: ${p.count}, Цена: ${p.price}₽`).join('\n')
+            : 'Нет товаров в заказе';
+
+        const deliveryInfo = order.deliveryInfo || {};
+        const deliveryDetails = `
+          Имя: ${deliveryInfo.name || 'Не указано'}
+          Город: ${deliveryInfo.city || 'Не указан'}
+          Улица: ${deliveryInfo.street || 'Не указана'}
+          Дом: ${deliveryInfo.house || 'Не указан'}
+          Телефон: ${deliveryInfo.phone || 'Не указан'}
+          Комментарий: ${deliveryInfo.comment || 'Отсутствует'}
+          __________________________________________________________`;
+
+        // Преобразование даты в московское время
+        const orderDate = order.createdAt instanceof admin.firestore.Timestamp
+            ? order.createdAt.toDate().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })
+            : order.createdAt;
+
+        orders += `ID заказа: ${doc.id}\n`;
+        orders += `Товары:\n${productsList}\n`;
+        orders += `Общая цена: ${order.totalPrice}₽\n`;
+        orders += `Дата: ${orderDate}\n`;
+        orders += `Информация о доставке:\n${deliveryDetails}\n\n`;
+      });
+
+      return bot.sendMessage(chatId, orders);
+    } catch (error) {
+      console.error('Ошибка при получении заказов пользователя:', error);
+      return bot.sendMessage(chatId, 'Ошибка при получении ваших заказов.');
+    }
+  }
+
+if (action === 'view_orders_week') {
     try {
       const today = new Date();
       const weekAgo = new Date();
@@ -304,7 +291,7 @@ bot.on('callback_query', async (callbackQuery) => {
 
   if (action === 'delete_product') {
     await bot.sendMessage(chatId, 'Введите ID товара для удаления:');
-    bot.once('message', async (msg) => {
+    bot.on('message', async (msg) => {
       const productId = msg.text.trim();
 
       try {
@@ -326,7 +313,7 @@ bot.on('callback_query', async (callbackQuery) => {
 
   if (action === 'add_product') {
     await bot.sendMessage(chatId, 'Введите данные о товаре в формате: Название, цена, описание, категория, ссылка на обложку, 5 ссылок на фотографии');
-    bot.once('message', async (msg) => {
+    bot.on('message', async (msg) => {
       const productDetails = msg.text.split(',');
       const [title, price, description, category, coverUrl, ...photoUrls] = productDetails;
 
