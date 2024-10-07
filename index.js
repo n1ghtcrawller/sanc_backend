@@ -370,50 +370,52 @@ app.post('/web-data', async (req, res) => {
   console.log('Received data:', req.body);
   console.log('query ID:', queryId);
 
-  // Проверяем наличие chatId
+  // Check for chatId
   if (!chatId) {
     console.error('Chat ID is missing');
     return res.status(400).json({ error: 'Chat ID is required' });
   }
 
-  // Добавляем заказ в коллекцию orders
+  // Prepare order data
   const orderData = {
-    ...req.body, // Все данные из req.body
-    createdAt: admin.firestore.Timestamp.now() // Текущая дата и время
+    ...req.body, // All data from req.body
+    createdAt: admin.firestore.Timestamp.now() // Current date and time
   };
 
   try {
-    // Добавляем заказ в коллекцию orders
+    // Add order to 'orders' collection
     await db.collection('orders').add(orderData);
     console.log('Order Added to Firebase');
 
-    // Обновляем количество товаров
+    // Update product quantities in a transaction
     for (const product of products) {
-      const productId = product.id;  // Предполагаем, что в продукте передается его id
-      const productDocRef = db.collection('products').doc(productId);
+      const productId = product.id; // Assuming product.id is provided
+      const productDocRef = db.collection('products').doc(productId.toString());
 
       await db.runTransaction(async (transaction) => {
         const productDoc = await transaction.get(productDocRef);
 
         if (!productDoc.exists) {
-          throw new Error(`Товар с ID ${productId} не найден.`);
+          throw new Error(`Product with ID ${productId} not found.`);
         }
 
         const currentCount = productDoc.data().count;
 
-        // Проверяем, что товар еще есть в наличии
+        // Ensure the product is in stock
         if (currentCount > 0) {
+          // Decrease the count by 1
           transaction.update(productDocRef, { count: currentCount - 1 });
+          console.log(`Product ID ${productId} count decreased by 1. New count: ${currentCount - 1}`);
         } else {
-          console.warn(`Товар с ID ${productId} закончился.`);
+          console.warn(`Product ID ${productId} is out of stock.`);
         }
       });
     }
 
-    // Формируем сообщение с товарами и их количеством
+    // Formulate product list for invoice
     const productList = products.map(item => `${item.title}, размер: ${item.size}, (Количество: ${item.count})`).join('\n');
 
-    // Формируем сообщение с информацией о доставке
+    // Create delivery message
     const deliveryMessage = `
       Информация о заказе:
       Город: ${deliveryInfo.city}
@@ -422,7 +424,7 @@ app.post('/web-data', async (req, res) => {
       Телефон: ${deliveryInfo.phone}
       Способ доставки: ${deliveryInfo.subject}`;
 
-    // Отправляем инвойс
+    // Send invoice
     await bot.sendInvoice(
         chatId,
         'Оплата заказа',
@@ -443,8 +445,8 @@ app.post('/web-data', async (req, res) => {
 
     return res.status(200).json({});
   } catch (e) {
-    console.error('Error:', e); // Логируем ошибку
-    return res.status(500).json({});
+    console.error('Error:', e); // Log error
+    return res.status(500).json({ error: 'An error occurred while processing your order.' });
   }
 });
 
