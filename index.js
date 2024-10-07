@@ -279,7 +279,7 @@ if (action === 'view_orders_week') {
       let products = 'Товары:\n\n';
       snapshot.forEach(doc => {
         const product = doc.data();
-        products += `ID: ${doc.id}\nНазвание: ${product.title}\nЦена: ${product.price}₽\nОписание: ${product.description}\nКоличество: ${product.count}\n\n`;
+        products += `ID: ${doc.id}\nНазвание: ${product.title}\nЦена: ${product.price}₽\nОписание: ${product.description}\n\n`;
       });
 
       return bot.sendMessage(chatId, products);
@@ -364,6 +364,7 @@ app.get('/products', async (req, res) => {
 });
 
 // Маршрут для обработки данных заказа
+// Добавляем заказ в коллекцию orders
 app.post('/web-data', async (req, res) => {
   const { chatId, queryId, products = [], totalPrice, deliveryInfo } = req.body;
   console.log('Received data:', req.body);
@@ -399,6 +400,8 @@ app.post('/web-data', async (req, res) => {
         }
 
         const currentCount = productDoc.data().count;
+
+        // Проверяем, что товар еще есть в наличии
         if (currentCount > 0) {
           transaction.update(productDocRef, { count: currentCount - 1 });
         } else {
@@ -444,6 +447,7 @@ app.post('/web-data', async (req, res) => {
     return res.status(500).json({});
   }
 });
+
 
 const PORT = 8000;
 
