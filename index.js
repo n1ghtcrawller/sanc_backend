@@ -365,6 +365,7 @@ app.get('/products', async (req, res) => {
 
 // Маршрут для обработки данных заказа
 // Добавляем заказ в коллекцию orders
+// Обработка данных заказа
 app.post('/web-data', async (req, res) => {
   const { chatId, queryId, products = [], totalPrice, deliveryInfo } = req.body;
   console.log('Received data:', req.body);
@@ -402,10 +403,10 @@ app.post('/web-data', async (req, res) => {
         const currentCount = productDoc.data().count;
 
         // Ensure the product is in stock
-        if (currentCount > 0) {
-          // Decrease the count by 1
-          transaction.update(productDocRef, { count: currentCount - 1 });
-          console.log(`Product ID ${productId} count decreased by 1. New count: ${currentCount - 1}`);
+        if (currentCount >= product.count) { // Проверяем, достаточно ли товара на складе
+          // Decrease the count by the count in the order
+          transaction.update(productDocRef, { count: currentCount - product.count });
+          console.log(`Product ID ${productId} count decreased by ${product.count}. New count: ${currentCount - product.count}`);
         } else {
           console.warn(`Product ID ${productId} is out of stock.`);
         }
