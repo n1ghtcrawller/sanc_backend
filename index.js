@@ -279,7 +279,7 @@ if (action === 'view_orders_week') {
       let products = 'Товары:\n\n';
       snapshot.forEach(doc => {
         const product = doc.data();
-        products += `ID: ${doc.id}\nНазвание: ${product.title}\nЦена: ${product.price}₽\nОписание: ${product.description}\n\n`;
+        products += `ID: ${doc.id}\nНазвание: ${product.title}\nЦена: ${product.price}₽\nОписание: ${product.description}\nКоличество: ${product.count}\n\\n\`;`;
       });
 
       return bot.sendMessage(chatId, products);
