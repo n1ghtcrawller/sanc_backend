@@ -279,7 +279,7 @@ if (action === 'view_orders_week') {
       let products = 'Товары:\n\n';
       snapshot.forEach(doc => {
         const product = doc.data();
-        products += `ID: ${doc.id}\nНазвание: ${product.title}\nЦена: ${product.price}₽\nОписание: ${product.description}\n\n`;
+        products += `ID: ${doc.id}\nНазвание: ${product.title}\nЦена: ${product.price}₽\nОписание: ${product.description}\nКоличество: ${product.count}\n\n`;
       });
 
       return bot.sendMessage(chatId, products);
@@ -336,9 +336,6 @@ if (action === 'view_orders_week') {
   }
 });
 
-
-
-
 // Маршрут для получения коллекции products
 app.get('/products', async (req, res) => {
   try {
@@ -377,14 +374,39 @@ app.post('/web-data', async (req, res) => {
     console.error('Chat ID is missing');
     return res.status(400).json({ error: 'Chat ID is required' });
   }
+
+  // Добавляем заказ в коллекцию orders
   const orderData = {
     ...req.body, // Все данные из req.body
     createdAt: admin.firestore.Timestamp.now() // Текущая дата и время
   };
-  await db.collection('orders').add(orderData);
-  console.log('Order Added to Firebase');
 
   try {
+    // Добавляем заказ в коллекцию orders
+    await db.collection('orders').add(orderData);
+    console.log('Order Added to Firebase');
+
+    // Обновляем количество товаров
+    for (const product of products) {
+      const productId = product.id;  // Предполагаем, что в продукте передается его id
+      const productDocRef = db.collection('products').doc(productId);
+
+      await db.runTransaction(async (transaction) => {
+        const productDoc = await transaction.get(productDocRef);
+
+        if (!productDoc.exists) {
+          throw new Error(`Товар с ID ${productId} не найден.`);
+        }
+
+        const currentCount = productDoc.data().count;
+        if (currentCount > 0) {
+          transaction.update(productDocRef, { count: currentCount - 1 });
+        } else {
+          console.warn(`Товар с ID ${productId} закончился.`);
+        }
+      });
+    }
+
     // Формируем сообщение с товарами и их количеством
     const productList = products.map(item => `${item.title}, размер: ${item.size}, (Количество: ${item.count})`).join('\n');
 
