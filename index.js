@@ -6,7 +6,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 
 // Инициализация бота и сервера
-const token = 'YOUR_BOT_TOKEN'; // Замените на ваш токен
+const token = '7105462091:AAG4blRZ7xvcRvAaanFIgMAdEwOI02KIX2M';
 const webAppUrl = 'https://progressivesanc.netlify.app';
 const bot = new TelegramBot(token, { polling: true });
 const app = express();
