@@ -199,6 +199,102 @@ bot.on('callback_query', async (callbackQuery) => {
     });
     return bot.sendMessage(chatId, ordersList);
   }
+  if (action === 'view_orders_week') {
+    try {
+      const today = new Date();
+      const weekAgo = new Date();
+      weekAgo.setDate(today.getDate() - 7); // Неделя назад
+
+      const ordersRef = db.collection('orders')
+          .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(weekAgo))
+          .orderBy('createdAt', 'asc');
+      const snapshot = await ordersRef.get();
+
+      if (snapshot.empty) {
+        return bot.sendMessage(chatId, 'Заказы за последнюю неделю не найдены.');
+      }
+
+      let orders = 'Заказы за последнюю неделю:\n\n';
+      snapshot.forEach(doc => {
+        const order = doc.data();
+        const productsList = order.products && Array.isArray(order.products) ?
+            order.products.map(p => `Название: ${p.title}, Размер: ${p.size}, Количество: ${p.count}, Цена: ${p.price}₽`).join('\n') :
+            'Нет товаров в заказе';
+
+        const deliveryInfo = order.deliveryInfo || {};
+        const deliveryDetails = `
+        Имя: ${deliveryInfo.name || 'Не указано'}
+        Город: ${deliveryInfo.city || 'Не указан'}
+        Улица: ${deliveryInfo.street || 'Не указана'}
+        Дом: ${deliveryInfo.house || 'Не указан'}
+        Офис: ${deliveryInfo.office || 'Не указан'}
+        Способ доставки: ${deliveryInfo.subject || 'Не указан'}
+        Телефон: ${deliveryInfo.phone || 'Не указан'}
+        Комментарий: ${deliveryInfo.comment || 'Отсутствует'}
+\n\n
+      `;
+
+        orders += `ID заказа: ${doc.id}\n`;
+        orders += `Товары:\n${productsList}\n`;
+        orders += `Общая цена: ${order.totalPrice}₽\n`;
+        orders += `Дата: ${order.createdAt instanceof admin.firestore.Timestamp ? order.createdAt.toDate() : order.createdAt}\n`;
+        orders += `Email: ${order.email || 'Не указан'}\n`;
+        orders += `Информация о доставке:\n${deliveryDetails}\n\n`;
+      });
+
+      return bot.sendMessage(chatId, orders);
+    } catch (error) {
+      console.error('Ошибка при получении заказов за последнюю неделю:', error);
+      return bot.sendMessage(chatId, 'Ошибка при получении заказов за последнюю неделю');
+    }
+  }
+  if (action === 'view_orders') {
+    try {
+      const ordersRef = db.collection('orders');
+      const snapshot = await ordersRef.get();
+
+      if (snapshot.empty) {
+        return bot.sendMessage(chatId, 'Заказы не найдены.');
+      }
+
+      let orders = 'Заказы:\n\n';
+      snapshot.forEach(doc => {
+        const order = doc.data();
+
+        // Проверка и отображение продуктов
+        const productsList = order.products && Array.isArray(order.products) ?
+            order.products.map(p => `Название: ${p.title}, Размер: ${p.size}, Количество: ${p.count}, Цена: ${p.price}₽`).join('\n') :
+            'Нет товаров в заказе';
+
+        // Формирование информации о доставке
+        const deliveryInfo = order.deliveryInfo || {};
+        const deliveryDetails = `
+        Город: ${deliveryInfo.city || 'Не указан'}
+        Улица: ${deliveryInfo.street || 'Не указана'}
+        Дом: ${deliveryInfo.house || 'Не указан'}
+        Офис: ${deliveryInfo.office || 'Не указан'}
+        Способ доставки: ${deliveryInfo.subject || 'Не указан'}
+        Телефон: ${deliveryInfo.phone || 'Не указан'}
+        Комментарий: ${deliveryInfo.comment || 'Отсутствует'}
+      `;
+
+        // Формирование общего списка заказов
+        orders += `ID заказа: ${doc.id}\n`;
+        orders += `Товары:\n${productsList}\n`;
+        orders += `Общая цена: ${order.totalPrice}₽\n`;
+        orders += `Дата: ${order.createdAt instanceof admin.firestore.Timestamp ? order.createdAt.toDate() : order.createdAt}\n`;
+        orders += `Email: ${order.email || 'Не указан'}\n`;
+        orders += `Информация о доставке:\n${deliveryDetails}\n\n`;
+      });
+
+      return bot.sendMessage(chatId, orders);
+    } catch (error) {
+      console.error('Ошибка при получении заказов:', error);
+      return bot.sendMessage(chatId, 'Ошибка при получении заказов');
+    }
+  }
+
+
 
   if (action === 'view_products') {
     // Получение списка товаров
