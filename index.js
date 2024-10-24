@@ -125,7 +125,6 @@ app.post('/web-data', async (req, res) => {
   }
 });
 
-// Основной обработчик сообщений
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
@@ -141,25 +140,17 @@ bot.on('message', async (msg) => {
     });
   }
 
-  bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const text = msg.text;
-
-    if (text === 'Меню' || text === '/start') {
-      return bot.sendMessage(chatId, 'Добро пожаловать в KeyBasicsNeutral', {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: 'Мои заказы', callback_data: 'my_orders' }],
-            [{ text: 'Доставка', callback_data: 'ship' }],
-            [{ text: 'Размерная сетка', callback_data: 'sizes' }]
-          ]
-        }
-      });
-    }
-
-    // Остальная обработка сообщений
-  });
-
+  if (text === 'Меню') {
+    return bot.sendMessage(chatId, 'Добро пожаловать в KeyBasicsNeutral', {
+      reply_markup: {
+        inline_keyboard: [
+          [{text: 'Мои заказы', callback_data: 'my_orders'}],
+          [{text: 'Доставка', callback_data: 'ship'}],
+          [{text: 'Размерная сетка', callback_data: 'sizes'}]
+        ]
+      }
+    });
+  }
 
   if (text.startsWith('/login')) {
     const [username, password] = text.split(' ').slice(1);
