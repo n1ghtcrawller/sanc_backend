@@ -23,45 +23,45 @@ const db = admin.firestore();
 // Хранилище сессий (можно заменить на постоянное хранилище)
 const sessions = {};
 
-// Получение ссылки на оплату через Tinkoff
-async function tinkoffGetLink(amount, chatId, orderNumber) {
-  const TINKOFF_TERMINAL_KEY = 'YOUR_TERMINAL_KEY';
-  const TINKOFF_TERMINAL_PASSWORD = 'YOUR_TERMINAL_PASSWORD';
-  const TINKOFF_INIT_URL = "https://securepay.tinkoff.ru/v2/Init";
-
-  const data = {
-    Amount: amount * 100, // сумма в копейках
-    Description: 'Оплата заказа через бота',
-    OrderId: `${chatId}-n${orderNumber}`,
-    TerminalKey: TINKOFF_TERMINAL_KEY,
-    Password: TINKOFF_TERMINAL_PASSWORD,
-  };
-
-  // Генерация токена для Tinkoff
-  const sortedData = Object.keys(data).sort().reduce((acc, key) => {
-    acc[key] = data[key];
-    return acc;
-  }, {});
-  const concatenatedString = Object.values(sortedData).join('');
-  const hashedString = crypto.createHash('sha256').update(concatenatedString).digest('hex');
-  sortedData.Token = hashedString;
-  delete sortedData.Password;
-
-  try {
-    const response = await axios.post(TINKOFF_INIT_URL, sortedData, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (response.data.Success === true && response.data.PaymentURL) {
-      return response.data.PaymentURL;
-    } else {
-      console.error('Ошибка получения ссылки на оплату');
-      return false;
-    }
-  } catch (error) {
-    console.error('Ошибка при запросе на оплату:', error);
-    return false;
-  }
-}
+// // Получение ссылки на оплату через Tinkoff
+// async function tinkoffGetLink(amount, chatId, orderNumber) {
+//   const TINKOFF_TERMINAL_KEY = 'YOUR_TERMINAL_KEY';
+//   const TINKOFF_TERMINAL_PASSWORD = 'YOUR_TERMINAL_PASSWORD';
+//   const TINKOFF_INIT_URL = "https://securepay.tinkoff.ru/v2/Init";
+//
+//   const data = {
+//     Amount: amount * 100, // сумма в копейках
+//     Description: 'Оплата заказа через бота',
+//     OrderId: `${chatId}-n${orderNumber}`,
+//     TerminalKey: TINKOFF_TERMINAL_KEY,
+//     Password: TINKOFF_TERMINAL_PASSWORD,
+//   };
+//
+//   // Генерация токена для Tinkoff
+//   const sortedData = Object.keys(data).sort().reduce((acc, key) => {
+//     acc[key] = data[key];
+//     return acc;
+//   }, {});
+//   const concatenatedString = Object.values(sortedData).join('');
+//   const hashedString = crypto.createHash('sha256').update(concatenatedString).digest('hex');
+//   sortedData.Token = hashedString;
+//   delete sortedData.Password;
+//
+//   try {
+//     const response = await axios.post(TINKOFF_INIT_URL, sortedData, {
+//       headers: { 'Content-Type': 'application/json' },
+//     });
+//     if (response.data.Success === true && response.data.PaymentURL) {
+//       return response.data.PaymentURL;
+//     } else {
+//       console.error('Ошибка получения ссылки на оплату');
+//       return false;
+//     }
+//   } catch (error) {
+//     console.error('Ошибка при запросе на оплату:', error);
+//     return false;
+//   }
+// }
 
 // Проверка роли администратора
 function isAdmin(chatId) {
@@ -84,22 +84,17 @@ app.get('/products', async (req, res) => {
   }
 });
 
-app.post('/web-data', async (req, res) => {
-  const { chatId, queryId, products = [], totalPrice, deliveryInfo } = req.body;
+pp.post('/web-data', async (req, res) => {
+  const { chatId, queryId, products = [], totalPrice, deliveryInfo, orderId } = req.body;
 
   if (!chatId) return res.status(400).json({ error: 'Chat ID обязателен' });
 
   const orderData = { ...req.body, createdAt: admin.firestore.Timestamp.now() };
-  const paymentURL = await tinkoffGetLink(totalPrice, chatId, queryId);
-
-  if (paymentURL) {
-    await bot.sendMessage(chatId, `Ваш заказ оформлен. Оплатите по ссылке: ${paymentURL}`);
-  } else {
-    await bot.sendMessage(chatId, 'Ошибка при создании ссылки на оплату.');
-  }
 
   try {
     await db.collection('orders').add(orderData);
+
+    // Обновление количества товаров в базе данных
     for (const product of products) {
       const productDocRef = db.collection('products').doc(product.id.toString());
       await db.runTransaction(async (transaction) => {
@@ -112,9 +107,14 @@ app.post('/web-data', async (req, res) => {
       });
     }
 
-    await bot.sendMessage(chatId, "Если возникли проблемы с оплатой, напишите нам!", {
+    // Подготавливаем сообщение с orderId для ссылки
+    const messageText = encodeURIComponent(`Добрый день! Я оформил заказ, его ID - ${orderId}`);
+    const managerLink = `https://t.me/kbn_mg?start=${messageText}`;
+
+    // Отправляем сообщение с кнопкой "Подтвердить заказ"
+    await bot.sendMessage(chatId, "Ваш заказ оформлен, для оплаты свяжитесь с менеджером", {
       reply_markup: {
-        inline_keyboard: [[{ text: 'Связаться', url: 'https://t.me/vlaaaadyanoy' }]],
+        inline_keyboard: [[{ text: 'Подтвердить заказ', url: managerLink }]],
       },
     });
 
