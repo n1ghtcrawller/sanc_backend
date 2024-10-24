@@ -109,7 +109,7 @@ app.post('/web-data', async (req, res) => {
 
     // Подготавливаем сообщение с orderId для ссылки
     const messageText = encodeURIComponent(`Добрый день! Я оформил заказ, его ID - ${orderId}`);
-    const managerLink = `https://t.me/kbn_mg?start=${messageText}`;
+    const managerLink = `tg://msg_url?url=t.me/kbn_mg&text=${messageText}`;
 
     // Отправляем сообщение с кнопкой "Подтвердить заказ"
     await bot.sendMessage(chatId, "Ваш заказ оформлен, для оплаты свяжитесь с менеджером", {
