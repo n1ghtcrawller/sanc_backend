@@ -184,9 +184,10 @@ bot.on('callback_query', async (callbackQuery) => {
   const chatId = callbackQuery.message.chat.id;
   const action = callbackQuery.data;
 
-  if (action !== 'my_orders' && !isAdmin(chatId)) {
+  if (action !== 'my_orders' && action !== 'ship' && action !== 'sizes' && !isAdmin(chatId)) {
     return bot.sendMessage(chatId, 'У вас нет прав для выполнения этой команды.');
   }
+
 
   if (action === 'ship') {
     return bot.sendMessage(chatId, '• Доставка по Москве: осуществляется в течение одного дня с момента подтверждения заказа.\n' +
