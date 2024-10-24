@@ -4,10 +4,8 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const axios = require('axios');
 const crypto = require('crypto');
-import tShirtSizes from './src/IMG_0693.JPEG'
-import hoodieSizes from './src/IMG_0702.JPEG'
+const fs = require('fs');
 
-// Инициализация бота и сервера
 const token = '7105462091:AAG4blRZ7xvcRvAaanFIgMAdEwOI02KIX2M';
 const webAppUrl = 'https://progressivesanc.netlify.app';
 const bot = new TelegramBot(token, { polling: true });
@@ -196,10 +194,10 @@ bot.on('callback_query', async (callbackQuery) => {
   }
   if (action === 'sizes') {
     await bot.sendMessage(chatId, 'Размерная сетка для футболок:');
-    await bot.sendPhoto(chatId, tShirtSizes);
+    await bot.sendPhoto(chatId, fs.createReadStream('./src/IMG_0693.JPEG'));
 
     await bot.sendMessage(chatId, 'Размерная сетка для худи:');
-    await bot.sendPhoto(chatId, hoodieSizes);
+    await bot.sendPhoto(chatId, fs.createReadStream('./src/IMG_0702.JPEG'));
   }
   if (action === 'my_orders') {
     try {
