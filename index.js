@@ -84,7 +84,7 @@ app.get('/products', async (req, res) => {
   }
 });
 
-pp.post('/web-data', async (req, res) => {
+app.post('/web-data', async (req, res) => {
   const { chatId, queryId, products = [], totalPrice, deliveryInfo, orderId } = req.body;
 
   if (!chatId) return res.status(400).json({ error: 'Chat ID обязателен' });
