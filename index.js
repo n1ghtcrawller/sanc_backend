@@ -133,6 +133,9 @@ bot.on('message', async (msg) => {
   if (text === '/start') {
     return bot.sendMessage(chatId, 'Добро пожаловать в KeyBasicsNeutral', {
       reply_markup: {
+        keyboard: [
+            [{text: 'Меню', callback_data: '/start'}]
+        ],
         inline_keyboard: [
           [{ text: 'Мои заказы', callback_data: 'my_orders' }],
           [{ text: 'Доставка', callback_data: 'ship' }],
