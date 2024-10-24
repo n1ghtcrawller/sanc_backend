@@ -134,33 +134,16 @@ bot.on('message', async (msg) => {
     return bot.sendMessage(chatId, 'Добро пожаловать в KeyBasicsNeutral', {
       reply_markup: {
         keyboard: [
-          [{ text: 'Меню' }]  // Эта кнопка отправит текст "Меню", который бот будет интерпретировать как команду /start
+            [{text: 'Меню', callback_data: '/start'}]
         ],
-        resize_keyboard: true  // Клавиатура будет подгоняться под экран пользователя
-      }
+        inline_keyboard: [
+          [{ text: 'Мои заказы', callback_data: 'my_orders' }],
+          [{ text: 'Доставка', callback_data: 'ship' }],
+          [{ text: 'Размерная сетка', callback_data: 'sizes' }]
+        ],
+      },
     });
   }
-
-  bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const text = msg.text;
-
-    // Перехват команды "Меню" как команды "/start"
-    if (text === 'Меню' || text === '/start') {
-      return bot.sendMessage(chatId, 'Добро пожаловать в KeyBasicsNeutral', {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: 'Мои заказы', callback_data: 'my_orders' }],
-            [{ text: 'Доставка', callback_data: 'ship' }],
-            [{ text: 'Размерная сетка', callback_data: 'sizes' }]
-          ]
-        }
-      });
-    }
-
-    // Остальная обработка сообщений
-  });
-
 
   if (text.startsWith('/login')) {
     const [username, password] = text.split(' ').slice(1);
